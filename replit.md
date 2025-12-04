@@ -102,7 +102,26 @@ npm start
 ```
 
 ## Deployment
+
+### Replit
 This project is configured for Replit deployment with autoscale mode, suitable for stateless web applications.
+
+### Vercel
+1. Push code to GitHub
+2. Import on Vercel dashboard
+3. Add environment variables
+4. Deploy - Vercel auto-detects Next.js
+
+### Railway
+1. Push code to GitHub
+2. Create new project on Railway
+3. Connect GitHub repository
+4. Add environment variables
+5. Uses `npm run start:prod` for production
+
+Configuration files included:
+- `vercel.json` - Vercel deployment config
+- `railway.toml` - Railway deployment config
 
 ## Recent Changes
 - **2025-12-04:** Implemented full cloaking system with server-side protection

