@@ -12,7 +12,17 @@ interface TrackingData {
 
 export async function POST(request: NextRequest) {
     try {
-        const data: TrackingData = await request.json();
+        const text = await request.text();
+        if (!text) {
+            return NextResponse.json({ success: false, error: 'Empty request body' }, { status: 400 });
+        }
+        
+        let data: TrackingData;
+        try {
+            data = JSON.parse(text);
+        } catch (parseError) {
+            return NextResponse.json({ success: false, error: 'Invalid JSON' }, { status: 400 });
+        }
 
         // Extract IP address from headers
         const ip =
@@ -39,7 +49,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Tracking error:', error);
-        return NextResponse.json({ success: false }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
 }
 
