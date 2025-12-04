@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   serverExternalPackages: ['fs', 'path'],
+  allowedDevOrigins: ['*'],
 };
 
 export default nextConfig;
