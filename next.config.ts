@@ -7,8 +7,13 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  serverExternalPackages: ['fs', 'path'],
-  allowedDevOrigins: ['*'],
+  allowedDevOrigins: [
+    '*.replit.dev',
+    '*.riker.replit.dev',
+    '*.repl.co',
+    'localhost:5000',
+    '127.0.0.1:5000',
+  ],
 };
 
 export default nextConfig;
