@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkIP, formatSecurityMessage, SecurityCheckResult } from '@/lib/ipCheck';
+import { checkUserAgentForBot, isDatacenterASN } from '@/lib/serverAntiBot';
 
 interface TrackingData {
     event: string;
@@ -9,6 +10,7 @@ interface TrackingData {
     platform?: string;
     timestamp?: string;
     referrer?: string;
+    threatScore?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -29,6 +31,13 @@ export async function POST(request: NextRequest) {
             request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
             request.headers.get('x-real-ip') ||
             'Unknown';
+
+        const userAgent = request.headers.get('user-agent') || '';
+        const uaCheck = checkUserAgentForBot(userAgent);
+        
+        if (uaCheck.isBot) {
+            console.log(`[Track] Bot detected: ${ip}, type: ${uaCheck.botType}`);
+        }
 
         let securityCheck: SecurityCheckResult | null = null;
         
