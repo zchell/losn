@@ -109,7 +109,7 @@ This project is configured for Replit deployment with autoscale mode, suitable f
   - Added /api/check-ip endpoint for client-side IP safety checks
   - Added /api/download endpoint for protected file downloads with IP verification
   - Moved download file from /public to /protected folder (not publicly accessible)
-  - Page now checks IP before showing content; unsafe visitors see cloaking page
+  - Unsafe visitors (VPN/datacenter/proxy/Tor) are redirected to Netflix
   - Fail-closed security: denies access on errors or unknown IPs
   - Both client-side and server-side protection against VPN/datacenter/proxy users
 
