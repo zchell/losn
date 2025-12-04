@@ -154,9 +154,9 @@ export async function checkIP(ip: string, apiKey?: string): Promise<SecurityChec
         console.error('IP check error:', error);
         return {
             ip,
-            isSafe: true,
+            isSafe: false,
             checks: {
-                datacenter: { detected: false },
+                datacenter: { detected: true },
                 vpn: { detected: false },
                 tor: { detected: false },
                 proxy: { detected: false },

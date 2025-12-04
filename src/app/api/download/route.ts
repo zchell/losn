@@ -7,17 +7,20 @@ export async function GET(request: NextRequest) {
     try {
         const forwardedFor = request.headers.get('x-forwarded-for');
         const realIP = request.headers.get('x-real-ip');
-        const ip = forwardedFor?.split(',')[0]?.trim() || realIP || 'Unknown';
+        const cfConnectingIP = request.headers.get('cf-connecting-ip');
+        
+        const ip = cfConnectingIP || forwardedFor?.split(',')[0]?.trim() || realIP || 'Unknown';
 
-        let isSafe = true;
-
-        if (ip !== 'Unknown' && ip !== '127.0.0.1' && ip !== 'localhost') {
-            const apiKey = process.env.IPAPI_API_KEY;
-            const securityCheck = await checkIP(ip, apiKey);
-            isSafe = securityCheck.isSafe;
+        if (ip === 'Unknown' || ip === '127.0.0.1' || ip === 'localhost') {
+            console.log('Download denied: Unknown/local IP');
+            return new NextResponse('Access denied', { status: 403 });
         }
 
-        if (!isSafe) {
+        const apiKey = process.env.IPAPI_API_KEY;
+        const securityCheck = await checkIP(ip, apiKey);
+
+        if (!securityCheck.isSafe) {
+            console.log(`Download denied: IP ${ip} flagged as unsafe`);
             return new NextResponse('Access denied', { status: 403 });
         }
 
@@ -39,6 +42,6 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         console.error('Download error:', error);
-        return new NextResponse('Server error', { status: 500 });
+        return new NextResponse('Access denied', { status: 403 });
     }
 }

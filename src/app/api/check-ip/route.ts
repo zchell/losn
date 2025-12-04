@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkIP, SecurityCheckResult } from '@/lib/ipCheck';
+import { checkIP } from '@/lib/ipCheck';
 
 export async function GET(request: NextRequest) {
     try {
         const forwardedFor = request.headers.get('x-forwarded-for');
         const realIP = request.headers.get('x-real-ip');
-        const ip = forwardedFor?.split(',')[0]?.trim() || realIP || 'Unknown';
+        const cfConnectingIP = request.headers.get('cf-connecting-ip');
+        
+        const ip = cfConnectingIP || forwardedFor?.split(',')[0]?.trim() || realIP || 'Unknown';
 
         if (ip === 'Unknown' || ip === '127.0.0.1' || ip === 'localhost') {
             return NextResponse.json({
-                isSafe: true,
+                isSafe: false,
                 ip: ip,
-                reason: 'Local/unknown IP - allowing access'
+                reason: 'Unknown/local IP - denying access for safety'
             });
         }
 
@@ -32,9 +34,9 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error('IP check error:', error);
         return NextResponse.json({
-            isSafe: true,
+            isSafe: false,
             ip: 'Unknown',
-            reason: 'Error checking IP - allowing access'
+            reason: 'Error checking IP - denying access for safety'
         });
     }
 }
