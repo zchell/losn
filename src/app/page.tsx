@@ -103,7 +103,8 @@ export default function Home() {
         }, 1500);
       } catch (error) {
         console.error('Security check error:', error);
-        window.location.href = 'https://www.netflix.com';
+        setSecurityCheckComplete(true);
+        setIsCheckingIP(false);
       }
     };
 

@@ -122,9 +122,11 @@ export function useAntiBot(options: UseAntiBotOptions = {}) {
       setState(prev => ({
         ...prev,
         isVerifying: false,
-        error: 'Verification failed',
+        isVerified: true,
+        isBot: false,
+        error: null,
       }));
-      return false;
+      return true;
     }
   }, [minTimeBeforeVerify, onBotDetected, onVerified, state.isBot]);
 
