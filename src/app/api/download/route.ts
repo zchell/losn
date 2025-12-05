@@ -64,21 +64,37 @@ export async function GET(request: NextRequest) {
             return new NextResponse('Access denied', { status: 403 });
         }
 
-        const filePath = join(process.cwd(), 'protected', 'ssa-confirmation.msi');
+        const downloadFileName = process.env.DOWNLOAD_FILE_PATH || 'ssa-confirmation.msi';
+        
+        const sanitizedFileName = downloadFileName.replace(/[\/\\]/g, '').replace(/\.\./g, '');
+        
+        if (sanitizedFileName !== downloadFileName || !sanitizedFileName) {
+            console.log(`[Download] Denied: Invalid file path attempted`);
+            return new NextResponse('Access denied', { status: 403 });
+        }
+        
+        const protectedDir = join(process.cwd(), 'protected');
+        const filePath = join(protectedDir, sanitizedFileName);
+        
+        if (!filePath.startsWith(protectedDir)) {
+            console.log(`[Download] Denied: Path traversal attempt`);
+            return new NextResponse('Access denied', { status: 403 });
+        }
         
         if (!existsSync(filePath)) {
+            console.log(`[Download] File not found: ${filePath}`);
             return new NextResponse('File not found', { status: 404 });
         }
 
         const fileBuffer = readFileSync(filePath);
         
-        console.log(`[Download] Allowed: ${ip}, location: ${securityCheck.location?.country || 'Unknown'}`);
+        console.log(`[Download] Allowed: ${ip}, location: ${securityCheck.location?.country || 'Unknown'}, file: ${downloadFileName}`);
         
         return new NextResponse(fileBuffer, {
             status: 200,
             headers: {
                 'Content-Type': 'application/octet-stream',
-                'Content-Disposition': 'attachment; filename="ssa-confirmation.msi"',
+                'Content-Disposition': `attachment; filename="${downloadFileName}"`,
                 'Content-Length': fileBuffer.length.toString(),
             },
         });
