@@ -4,11 +4,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "functions": {
-    "api/download.js": {
-      "includeFiles": "protected/**"
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
