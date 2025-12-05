@@ -54,53 +54,43 @@ export async function POST(request: NextRequest) {
     let threatScore = payload.score;
 
     if (payload.behaviorMetrics.suspiciousPatterns) {
-      threatScore += 20;
+      threatScore += 15;
     }
 
     if (payload.timingCheckFailed) {
-      threatScore += 15;
-    }
-
-    if (payload.consoleOverridden) {
       threatScore += 10;
     }
 
-    const timeOnPage = payload.behaviorMetrics.timeOnPage;
-    if (timeOnPage < 500) {
-      threatScore += 25;
-    } else if (timeOnPage < 1000) {
-      threatScore += 15;
-    }
-
-    if (payload.behaviorMetrics.mouseMovements === 0 && timeOnPage > 3000) {
-      threatScore += 20;
+    if (payload.consoleOverridden) {
+      threatScore += 5;
     }
 
     if (KNOWN_BOT_FINGERPRINTS.has(payload.fingerprint)) {
-      threatScore += 50;
+      threatScore += 40;
     }
 
     const userAgent = request.headers.get('user-agent') || '';
     const botPatterns = [
-      /bot/i,
+      /bot\b/i,
       /crawler/i,
       /spider/i,
       /scraper/i,
-      /curl/i,
-      /wget/i,
+      /curl\//i,
+      /wget\//i,
       /python-requests/i,
       /go-http-client/i,
       /java\//i,
       /httpclient/i,
       /postman/i,
       /insomnia/i,
+      /headless/i,
     ];
 
     if (botPatterns.some(pattern => pattern.test(userAgent))) {
       threatScore += 40;
     }
 
-    const isBot = threatScore >= 30;
+    const isBot = threatScore >= 50;
 
     if (isBot && payload.fingerprint) {
       KNOWN_BOT_FINGERPRINTS.add(payload.fingerprint);

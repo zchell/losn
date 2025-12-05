@@ -320,7 +320,7 @@ export function detectBot(): BotDetectionResult {
 
   const fingerprint = generateFingerprint();
 
-  const isBot = botScore >= 25;
+  const isBot = botScore >= 50;
 
   return {
     isBot,

@@ -237,21 +237,10 @@ const DATACENTER_ASN_KEYWORDS = [
 ];
 
 const SUSPICIOUS_HEADERS = [
-  'x-forwarded-for',
-  'x-real-ip', 
-  'via',
   'x-proxy-id',
   'x-bluecoat-via',
   'x-routed',
   'x-originating-ip',
-  'cf-connecting-ip',
-  'true-client-ip',
-  'x-client-ip',
-  'x-cluster-client-ip',
-  'fastly-client-ip',
-  'x-forwarded',
-  'forwarded-for',
-  'forwarded',
 ];
 
 export function checkUserAgentForBot(userAgent: string): ServerBotCheckResult {
@@ -336,16 +325,16 @@ export function checkHeadersForProxy(headers: Headers): { isProxy: boolean; reas
   for (const header of SUSPICIOUS_HEADERS) {
     if (headers.get(header)) {
       proxyHeaderCount++;
+      reasons.push(`Suspicious header: ${header}`);
     }
   }
 
-  if (proxyHeaderCount >= 3) {
+  if (proxyHeaderCount >= 2) {
     isProxy = true;
-    reasons.push(`Multiple proxy headers detected (${proxyHeaderCount})`);
   }
 
   const via = headers.get('via');
-  if (via && via.includes('proxy')) {
+  if (via && /proxy|anonymizer|tunnel/i.test(via)) {
     isProxy = true;
     reasons.push('Via header indicates proxy');
   }
@@ -359,11 +348,18 @@ export function isDatacenterASN(asnInfo: { org?: string; type?: string }): boole
   const org = (asnInfo.org || '').toLowerCase();
   const type = (asnInfo.type || '').toLowerCase();
   
-  if (type === 'hosting' || type === 'datacenter' || type === 'business') {
+  if (type === 'hosting' || type === 'datacenter') {
     return true;
   }
   
-  for (const keyword of DATACENTER_ASN_KEYWORDS) {
+  const strictDatacenterKeywords = [
+    'amazon', 'aws', 'google cloud', 'gcp', 'microsoft azure', 'azure',
+    'digitalocean', 'linode', 'vultr', 'ovh', 'hetzner', 'scaleway',
+    'contabo', 'leaseweb', 'softlayer', 'rackspace', 'oracle cloud',
+    'alibaba cloud', 'tencent cloud', 'huawei cloud'
+  ];
+  
+  for (const keyword of strictDatacenterKeywords) {
     if (org.includes(keyword)) {
       return true;
     }
