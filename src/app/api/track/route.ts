@@ -129,19 +129,28 @@ async function sendToDiscord(message: string) {
 async function sendToTelegram(message: string) {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
-    if (!token || !chatId) return;
+    
+    console.log(`[Telegram] Token exists: ${!!token}, ChatId exists: ${!!chatId}`);
+    
+    if (!token || !chatId) {
+        console.log('[Telegram] Missing credentials, skipping notification');
+        return;
+    }
 
     try {
-        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        const plainMessage = message.replace(/\*\*/g, '').replace(/\*/g, '');
+        
+        const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: message,
-                parse_mode: 'Markdown',
+                text: plainMessage,
             }),
         });
+        const result = await response.json();
+        console.log(`[Telegram] Response:`, result.ok ? 'Success' : result.description);
     } catch (error) {
-        console.error('Telegram API error:', error);
+        console.error('[Telegram] API error:', error);
     }
 }
