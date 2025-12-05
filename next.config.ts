@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/api/download': ['./protected/**/*'],
   },
+  allowedDevOrigins: [
+    'healthcheck.railway.app',
+  ],
   async headers() {
     return [
       {
