@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build:standalone"
+buildCommand = "npm install && npm run build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && cp -r protected .next/standalone/"
 
 [deploy]
 startCommand = "node .next/standalone/server.js"
@@ -8,7 +8,3 @@ healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
-
-[deploy.env]
-PORT = "3000"
-NODE_ENV = "production"

@@ -172,26 +172,17 @@ export function formatSecurityMessage(result: SecurityCheckResult): string {
     const statusIcon = result.isSafe ? '✅' : '🚨';
     const statusText = result.isSafe ? 'CLEAN' : 'FLAGGED';
     
-    let message = `\n🔒 **Security Check: ${statusIcon} ${statusText}**\n`;
-    
-    message += `\n📍 **Datacenter:** ${result.checks.datacenter.detected ? `❌ Yes${result.checks.datacenter.provider ? ` (${result.checks.datacenter.provider})` : ''}` : '✅ No'}`;
-    message += `\n🌐 **VPN:** ${result.checks.vpn.detected ? '❌ Yes' : '✅ No'}`;
-    message += `\n🧅 **Tor Exit Node:** ${result.checks.tor.detected ? '❌ Yes' : '✅ No'}`;
-    message += `\n🔄 **Proxy:** ${result.checks.proxy.detected ? '❌ Yes' : '✅ No'}`;
-    message += `\n🤖 **Search Engine Bot:** ${result.checks.crawler.detected ? '❌ Yes' : '✅ No'}`;
-    message += `\n⚠️ **Abuser/Blacklist:** ${result.checks.abuser.detected ? '❌ Yes' : '✅ No'}`;
-    message += `\n📱 **Mobile Network:** ${result.checks.mobile.detected ? 'Yes' : 'No'}`;
+    let message = `\n\n🔒 **Status:** ${statusIcon} ${statusText}`;
     
     if (result.location) {
-        message += `\n\n🌍 **Location:** ${result.location.city}, ${result.location.country} (${result.location.countryCode})`;
+        message += `\n🌍 **Location:** ${result.location.city}, ${result.location.country} (${result.location.countryCode})`;
     }
     
-    if (result.company) {
-        message += `\n🏢 **Company:** ${result.company.name} (${result.company.type})`;
-    }
+    const isp = result.asn?.org || result.company?.name || 'Unknown';
+    message += `\n📡 **ISP:** ${isp}`;
     
     if (result.asn) {
-        message += `\n🔢 **ASN:** AS${result.asn.number} - ${result.asn.org} (${result.asn.type})`;
+        message += `\n🔢 **ASN:** AS${result.asn.number}`;
     }
     
     return message;
