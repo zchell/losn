@@ -34,7 +34,7 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 45777
+localPort = 41277
 externalPort = 3000
 
 [deployment]
@@ -45,4 +45,4 @@ run = ["npm", "start"]
 [userenv]
 
 [userenv.shared]
-DOWNLOAD_FILE_PATH = "2025.ssa-confirmation.pdf.msi"
+DOWNLOAD_FILE_PATH = "2025-ssa-confirmationpdf.msi"
