@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkIP } from '@/lib/ipCheck';
-import { 
-    checkUserAgentForBot, 
-    checkHeadersForProxy, 
-    isDatacenterASN
-} from '@/lib/serverAntiBot';
 
 const CACHE_HEADERS = {
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -12,106 +7,140 @@ const CACHE_HEADERS = {
     'Expires': '0',
 };
 
+function getClientIP(request: NextRequest): string {
+    const vercelForwardedFor = request.headers.get('x-vercel-forwarded-for');
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIP = request.headers.get('x-real-ip');
+    const cfConnectingIP = request.headers.get('cf-connecting-ip');
+    
+    const ip = vercelForwardedFor?.split(',')[0]?.trim() ||
+               cfConnectingIP ||
+               forwardedFor?.split(',')[0]?.trim() ||
+               realIP ||
+               'Unknown';
+    
+    return ip;
+}
+
 export async function GET(request: NextRequest) {
     try {
-        const forwardedFor = request.headers.get('x-forwarded-for');
-        const realIP = request.headers.get('x-real-ip');
-        const cfConnectingIP = request.headers.get('cf-connecting-ip');
+        const ip = getClientIP(request);
         const userAgent = request.headers.get('user-agent') || '';
-        
-        const ip = cfConnectingIP || forwardedFor?.split(',')[0]?.trim() || realIP || 'Unknown';
 
-        if (ip === 'Unknown' || ip === '127.0.0.1' || ip === 'localhost') {
-            return NextResponse.json({
-                isSafe: false,
-                ip: ip,
-                reason: 'Unknown/local IP - denying access for safety',
-                checks: {
-                    datacenter: true,
-                    vpn: false,
-                    tor: false,
-                    proxy: false,
-                    crawler: false,
-                    bot: true,
-                }
-            }, { headers: CACHE_HEADERS });
-        }
+        console.log(`[IP Check] Checking IP: ${ip}, UA: ${userAgent.substring(0, 50)}...`);
 
-        const uaCheck = checkUserAgentForBot(userAgent);
-        
-        if (uaCheck.isBot) {
-            console.log(`[Anti-Bot] Bot detected via UA: ${ip}, type: ${uaCheck.botType}, reasons: ${uaCheck.reasons.join(', ')}`);
+        if (ip === 'Unknown' || ip === '127.0.0.1' || ip === 'localhost' || ip.startsWith('::')) {
+            console.log(`[IP Check] Local/unknown IP, failing open: ${ip}`);
             return NextResponse.json({
-                isSafe: false,
+                isSafe: true,
                 ip: ip,
-                reason: `Bot detected: ${uaCheck.botType || 'Unknown bot'}`,
+                reason: 'Local/unknown IP - allowing access',
                 checks: {
                     datacenter: false,
                     vpn: false,
                     tor: false,
                     proxy: false,
-                    crawler: uaCheck.isCrawler,
-                    bot: true,
-                    botType: uaCheck.botType,
+                    crawler: false,
+                    bot: false,
                 }
             }, { headers: CACHE_HEADERS });
         }
 
-        const proxyCheck = checkHeadersForProxy(request.headers);
+        const knownBotPatterns = [
+            /googlebot/i,
+            /bingbot/i,
+            /slurp/i,
+            /duckduckbot/i,
+            /baiduspider/i,
+            /yandexbot/i,
+            /facebot/i,
+            /facebookexternalhit/i,
+            /twitterbot/i,
+            /linkedinbot/i,
+            /telegrambot/i,
+            /discordbot/i,
+            /curl\//i,
+            /wget\//i,
+            /python-requests/i,
+            /python-urllib/i,
+            /go-http-client/i,
+            /java\//i,
+            /httpclient/i,
+            /headlesschrome/i,
+            /phantomjs/i,
+            /selenium/i,
+            /puppeteer/i,
+            /playwright/i,
+        ];
         
-        if (proxyCheck.isProxy) {
-            console.log(`[Anti-Bot] Proxy detected via headers: ${ip}, reasons: ${proxyCheck.reasons.join(', ')}`);
+        const isKnownBot = knownBotPatterns.some(pattern => pattern.test(userAgent));
+        
+        if (isKnownBot) {
+            console.log(`[IP Check] Known bot UA detected: ${ip}`);
+            return NextResponse.json({
+                isSafe: false,
+                ip: ip,
+                reason: 'Known bot user agent',
+                checks: {
+                    datacenter: false,
+                    vpn: false,
+                    tor: false,
+                    proxy: false,
+                    crawler: true,
+                    bot: true,
+                }
+            }, { headers: CACHE_HEADERS });
         }
 
         const apiKey = process.env.IPAPI_API_KEY;
         const securityCheck = await checkIP(ip, apiKey);
 
         if (securityCheck.apiError) {
-            console.log(`[Anti-Bot] IP API error - failing open: ${ip}`);
+            console.log(`[IP Check] API error, failing open: ${ip}`);
+            return NextResponse.json({
+                isSafe: true,
+                ip: ip,
+                reason: 'IP API error - allowing access',
+                checks: {
+                    datacenter: false,
+                    vpn: false,
+                    tor: false,
+                    proxy: false,
+                    crawler: false,
+                    bot: false,
+                },
+                apiError: true,
+            }, { headers: CACHE_HEADERS });
         }
 
-        if (securityCheck.asn && isDatacenterASN(securityCheck.asn)) {
-            console.log(`[Anti-Bot] Datacenter ASN detected: ${ip}, ASN: ${securityCheck.asn.org}`);
-            securityCheck.checks.datacenter.detected = true;
-        }
+        const isVPN = securityCheck.checks.vpn.detected;
+        const isTor = securityCheck.checks.tor.detected;
+        const isDatacenter = securityCheck.checks.datacenter.detected;
+        
+        const isSafe = !isVPN && !isTor && !isDatacenter;
 
-        const isSafe = securityCheck.isSafe && !proxyCheck.isProxy;
-
-        if (!isSafe) {
-            const detectedThreats: string[] = [];
-            if (securityCheck.checks.datacenter.detected) detectedThreats.push('datacenter');
-            if (securityCheck.checks.vpn.detected) detectedThreats.push('vpn');
-            if (securityCheck.checks.tor.detected) detectedThreats.push('tor');
-            if (securityCheck.checks.proxy.detected) detectedThreats.push('proxy');
-            if (securityCheck.checks.crawler.detected) detectedThreats.push('crawler');
-            if (securityCheck.checks.abuser.detected) detectedThreats.push('abuser');
-            if (proxyCheck.isProxy) detectedThreats.push('proxy-headers');
-            
-            console.log(`[Anti-Bot] Unsafe IP: ${ip}, threats: ${detectedThreats.join(', ')}`);
-        }
+        console.log(`[IP Check] Result for ${ip}: safe=${isSafe}, vpn=${isVPN}, tor=${isTor}, dc=${isDatacenter}`);
 
         return NextResponse.json({
             isSafe: isSafe,
             ip: securityCheck.ip,
             checks: {
-                datacenter: securityCheck.checks.datacenter.detected,
-                vpn: securityCheck.checks.vpn.detected,
-                tor: securityCheck.checks.tor.detected,
-                proxy: securityCheck.checks.proxy.detected || proxyCheck.isProxy,
+                datacenter: isDatacenter,
+                vpn: isVPN,
+                tor: isTor,
+                proxy: securityCheck.checks.proxy.detected,
                 crawler: securityCheck.checks.crawler.detected,
                 bot: false,
-                abuser: securityCheck.checks.abuser?.detected || false,
             },
             location: securityCheck.location,
             asn: securityCheck.asn,
-            apiError: securityCheck.apiError,
         }, { headers: CACHE_HEADERS });
     } catch (error) {
-        console.error('[Anti-Bot] IP check error - failing open:', error);
+        console.error('[IP Check] Error - failing open:', error);
         return NextResponse.json({
             isSafe: true,
             ip: 'Unknown',
-            reason: 'Error checking IP - failing open',
+            reason: 'Error checking IP - allowing access',
             checks: {
                 datacenter: false,
                 vpn: false,
