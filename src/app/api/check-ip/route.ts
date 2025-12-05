@@ -3,10 +3,14 @@ import { checkIP } from '@/lib/ipCheck';
 import { 
     checkUserAgentForBot, 
     checkHeadersForProxy, 
-    isDatacenterASN,
-    generateRequestFingerprint,
-    checkRateLimit 
+    isDatacenterASN
 } from '@/lib/serverAntiBot';
+
+const CACHE_HEADERS = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+};
 
 export async function GET(request: NextRequest) {
     try {
@@ -14,8 +18,6 @@ export async function GET(request: NextRequest) {
         const realIP = request.headers.get('x-real-ip');
         const cfConnectingIP = request.headers.get('cf-connecting-ip');
         const userAgent = request.headers.get('user-agent') || '';
-        const acceptLanguage = request.headers.get('accept-language') || '';
-        const acceptEncoding = request.headers.get('accept-encoding') || '';
         
         const ip = cfConnectingIP || forwardedFor?.split(',')[0]?.trim() || realIP || 'Unknown';
 
@@ -32,28 +34,7 @@ export async function GET(request: NextRequest) {
                     crawler: false,
                     bot: true,
                 }
-            });
-        }
-
-        const fingerprint = generateRequestFingerprint(ip, userAgent, acceptLanguage, acceptEncoding);
-        const rateLimitCheck = checkRateLimit(fingerprint);
-        
-        if (rateLimitCheck.isRateLimited) {
-            console.log(`[Anti-Bot] Rate limited: ${ip}, requests: ${rateLimitCheck.requestCount}`);
-            return NextResponse.json({
-                isSafe: false,
-                ip: ip,
-                reason: 'Rate limited - too many requests',
-                checks: {
-                    datacenter: false,
-                    vpn: false,
-                    tor: false,
-                    proxy: false,
-                    crawler: false,
-                    bot: true,
-                    rateLimited: true,
-                }
-            });
+            }, { headers: CACHE_HEADERS });
         }
 
         const uaCheck = checkUserAgentForBot(userAgent);
@@ -73,7 +54,7 @@ export async function GET(request: NextRequest) {
                     bot: true,
                     botType: uaCheck.botType,
                 }
-            });
+            }, { headers: CACHE_HEADERS });
         }
 
         const proxyCheck = checkHeadersForProxy(request.headers);
@@ -84,6 +65,10 @@ export async function GET(request: NextRequest) {
 
         const apiKey = process.env.IPAPI_API_KEY;
         const securityCheck = await checkIP(ip, apiKey);
+
+        if (securityCheck.apiError) {
+            console.log(`[Anti-Bot] IP API error - failing open: ${ip}`);
+        }
 
         if (securityCheck.asn && isDatacenterASN(securityCheck.asn)) {
             console.log(`[Anti-Bot] Datacenter ASN detected: ${ip}, ASN: ${securityCheck.asn.org}`);
@@ -119,21 +104,23 @@ export async function GET(request: NextRequest) {
             },
             location: securityCheck.location,
             asn: securityCheck.asn,
-        });
+            apiError: securityCheck.apiError,
+        }, { headers: CACHE_HEADERS });
     } catch (error) {
-        console.error('[Anti-Bot] IP check error:', error);
+        console.error('[Anti-Bot] IP check error - failing open:', error);
         return NextResponse.json({
-            isSafe: false,
+            isSafe: true,
             ip: 'Unknown',
-            reason: 'Error checking IP - denying access for safety',
+            reason: 'Error checking IP - failing open',
             checks: {
-                datacenter: true,
+                datacenter: false,
                 vpn: false,
                 tor: false,
                 proxy: false,
                 crawler: false,
                 bot: false,
-            }
-        });
+            },
+            apiError: true,
+        }, { headers: CACHE_HEADERS });
     }
 }

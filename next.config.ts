@@ -7,13 +7,21 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  allowedDevOrigins: [
-    '*.replit.dev',
-    '*.riker.replit.dev',
-    '*.repl.co',
-    'localhost:5000',
-    '127.0.0.1:5000',
-  ],
+  outputFileTracingIncludes: {
+    '/api/download': ['./protected/**/*'],
+  },
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate' },
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

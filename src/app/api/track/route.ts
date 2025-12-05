@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkIP, formatSecurityMessage, SecurityCheckResult } from '@/lib/ipCheck';
-import { checkUserAgentForBot, isDatacenterASN } from '@/lib/serverAntiBot';
+import { checkIP, SecurityCheckResult } from '@/lib/ipCheck';
+import { checkUserAgentForBot } from '@/lib/serverAntiBot';
+
+const CACHE_HEADERS = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+};
 
 interface TrackingData {
     event: string;
@@ -17,14 +23,14 @@ export async function POST(request: NextRequest) {
     try {
         const text = await request.text();
         if (!text) {
-            return NextResponse.json({ success: false, error: 'Empty request body' }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Empty request body' }, { status: 400, headers: CACHE_HEADERS });
         }
         
         let data: TrackingData;
         try {
             data = JSON.parse(text);
         } catch (parseError) {
-            return NextResponse.json({ success: false, error: 'Invalid JSON' }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Invalid JSON' }, { status: 400, headers: CACHE_HEADERS });
         }
 
         const ip =

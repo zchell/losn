@@ -85,6 +85,7 @@ export interface SecurityCheckResult {
         type: string;
     };
     rawResponse?: IPApiResponse;
+    apiError?: boolean;
 }
 
 export async function checkIP(ip: string, apiKey?: string): Promise<SecurityCheckResult> {
@@ -151,12 +152,12 @@ export async function checkIP(ip: string, apiKey?: string): Promise<SecurityChec
             rawResponse: data,
         };
     } catch (error) {
-        console.error('IP check error:', error);
+        console.error('[IP Check] API error - failing open:', error);
         return {
             ip,
-            isSafe: false,
+            isSafe: true,
             checks: {
-                datacenter: { detected: true },
+                datacenter: { detected: false },
                 vpn: { detected: false },
                 tor: { detected: false },
                 proxy: { detected: false },
@@ -164,6 +165,7 @@ export async function checkIP(ip: string, apiKey?: string): Promise<SecurityChec
                 crawler: { detected: false },
                 mobile: { detected: false },
             },
+            apiError: true,
         };
     }
 }
